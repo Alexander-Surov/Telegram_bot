@@ -31,8 +31,7 @@ class Caesar(ICipher):
 
         for i in range(len(self.default_data)):
             if self.default_data[i] in self.alphabet:
-                self.data += self.alphabet[int((self.alphabet.index(self.default_data[i]) + step) % n +
-                                             (n if self.alphabet.index(self.default_data[i]) > n - 1 else 0))]
+                self.data += self.alphabet[int((self.alphabet.index(self.default_data[i]) + step) % n + (n if self.alphabet.index(self.default_data[i]) > n - 1 else 0))]
             else:
                 self.data += self.default_data[i]
 
@@ -57,8 +56,7 @@ class Visener(ICipher):
         j = 0
         for i in range(len(self.default_data)):
             if self.default_data[i] in self.alphabet:
-                self.data += self.alphabet[int((self.alphabet.index(self.default_data[i]) % n + self.alphabet.index(key_sequence[j])) % n +
-                                                 (n if self.alphabet.index(self.default_data[i]) > n - 1 else 0))]
+                self.data += self.alphabet[int((self.alphabet.index(self.default_data[i]) % n + self.alphabet.index(key_sequence[j])) % n + (n if self.alphabet.index(self.default_data[i]) > n - 1 else 0))]
                 j += 1
             else:
                 self.data += self.default_data[i]
@@ -73,8 +71,7 @@ class Visener(ICipher):
         j = 0
         for i in range(len(self.default_data)):
             if self.default_data[i] in self.alphabet:
-                self.data += self.alphabet[int((-1) * (self.alphabet.index(self.default_data[i]) % n + self.alphabet.index(key_sequence[j])) % n +
-                                                 (n if self.alphabet.index(self.default_data[i]) > n - 1 else 0))]
+                self.data += self.alphabet[int((-1) * (self.alphabet.index(self.default_data[i]) % n + self.alphabet.index(key_sequence[j])) % n + (n if self.alphabet.index(self.default_data[i]) > n - 1 else 0))]
                 j += 1
             else:
                 self.data += self.default_data[i]
