@@ -3,7 +3,8 @@ import string
 
 
 def ConvertToNumbers(data) -> list:
-    """ Вычленяет все числа и '\n' из зашифрованного текста
+    """
+    Вычленяет все числа и '\n' из зашифрованного текста
 
     Input:  Текст, зашифрованный Вернамом (str)
 
@@ -41,7 +42,8 @@ def ConvertToNumbers(data) -> list:
 
 
 def IsCorrectEncodedVernam(text) -> bool:
-    """ Проверяет, является ли текст зашифрованным с помощью шифра Вернама
+    """
+    Проверяет, является ли текст зашифрованным с помощью шифра Вернама
 
     Input:  Текст (str)
 
@@ -57,8 +59,25 @@ def IsCorrectEncodedVernam(text) -> bool:
     return re.compile(f"^[{string.digits + string.whitespace}]+$").search(text) is not None
 
 
+def DoesBelongAlphabet(text, alphabet) -> bool:
+    """
+    Проверяет, если ли в тексте буквы, отсутствующие в алфавите
+
+    Input:  Текст (str),
+            Алфавит (str)
+
+    Output: (bool)
+
+    Ex.:    ("abcd", "a..zA..Z") -> True
+            ("абвг", "a..zA..Z") -> False
+    """
+
+    return set(text).issubset(set(alphabet))
+
+
 def IsAlphabet(text) -> bool:
-    """ Проверяет, можно ли из текста сделать алфавит: без дубликатов и только из символов-букв (isalpha)
+    """
+    Проверяет, можно ли из текста сделать алфавит: без дубликатов и только из символов-букв (isalpha)
 
     Input:  Текст (str)
 
@@ -74,7 +93,8 @@ def IsAlphabet(text) -> bool:
 
 
 def NormalizeAlphabet(text) -> str:
-    """ Приводит алфавит к виду: сначала все строчные, потом все заглавные буквы по порядку без пробелов
+    """
+    Приводит алфавит к виду: сначала все строчные, потом все заглавные буквы по порядку без пробелов
 
     Input:  Алфавит (str)
 
@@ -91,10 +111,11 @@ def NormalizeAlphabet(text) -> str:
 
 
 def FrequencyAnalyzer(given_frequency, actual_frequency) -> list:
-    """ Определяет сумму разниц между истинными (Wikipedia) и текущими значениями частот (%) букв для каждого сдвига Цезаря
+    """
+    Определяет сумму разниц между истинными (Wikipedia) и текущими значениями частот (%) букв для каждого сдвига Цезаря
 
     Input:  Частоты (доли) всех букв исходного текста (list[double]),
-            истинные частоты букв языка (list[double])
+            Истинные частоты букв языка (list[double])
 
     Output: Список значений (list[double])
 
@@ -121,11 +142,14 @@ def FrequencyAnalyzer(given_frequency, actual_frequency) -> list:
 
 
 def HackCaesarStep(data, alphabet) -> int:  # нужно оформить новую БД
-    """ Определяет шаг шифра Цезаря, применяя частотный анализ
+    """
+    Определяет шаг шифра Цезаря, применяя частотный анализ
 
     Input:  Текст (str)
 
     Output: Шаг шифра Цезаря (int)
+
+    Note:   В бесплатной версии доступны только два языка, чтобы открыть остальные перейдите по ссылке: https://youtu.be/kC7-tW0QPJ4
     """
 
     if alphabet == 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ':
@@ -133,6 +157,7 @@ def HackCaesarStep(data, alphabet) -> int:  # нужно оформить нов
                           'h': 0.0610, 'i': 0.0700, 'j': 0.0015, 'k': 0.0077, 'l': 0.0400, 'm': 0.0240, 'n': 0.0670,
                           'o': 0.0750, 'p': 0.0190, 'q': 0.0095, 'r': 0.0600, 's': 0.0630, 't': 0.0910, 'u': 0.0280,
                           'v': 0.0098, 'w': 0.0240, 'x': 0.0015, 'y': 0.0200, 'z': 0.0074}
+
     if alphabet == 'абвгдеёжзийклмнопрстуфхцчшщьыъэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯ':
         frequency_rate = {'а': 0.0801, 'б': 0.0159, 'в': 0.0454, 'г': 0.0170, 'д': 0.0298, 'е': 0.0845, 'ё': 0.0004, 
                           'ж': 0.0094, 'з': 0.0165, 'и': 0.0735, 'й': 0.0121, 'к': 0.0349, 'л': 0.0440, 'м': 0.0321,
