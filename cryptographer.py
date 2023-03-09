@@ -5,7 +5,7 @@ class ICipher():
     def __init__(self, x, y):
         self.alphabet = y
         self.default_data = x
-        self.data = "--no_cipher_methods_were_called--"
+        self.data = "__no_cipher_methods_were_called__"
 
 
     def __repr__(self) -> str:
@@ -78,7 +78,7 @@ class Visener(ICipher):
 
 
     def hack(self, arg):
-        self.data = "Hack your a$$"
+        self.data = "[TBD]"
 
 
 class Vernam(ICipher):
@@ -113,4 +113,4 @@ class Vernam(ICipher):
 
 
     def hack(self):
-        self.data = "Hack your a$$"
+        self.data = "[TBD]"
