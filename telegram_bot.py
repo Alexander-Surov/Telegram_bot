@@ -1,19 +1,15 @@
 import telebot
 from telebot import types
-from pathlib import Path
-
 import pandas as pd
 
-import cryptographer as cg
-import utils
+from Cryptographer import Caesar_cipher as ca_c
+from Cryptographer import Visener_cipher as vi_c
+from Cryptographer import Vernam_cipher as ve_c
+
+from api import utils_api
 
 
-class Telegram_Bot():
-    bot = telebot.TeleBot(Path("Telegram Bot/Token.txt").read_text())
-
-    __lang_address = "Telegram Bot/languages.csv"
-    __rate_address = "Telegram Bot/frequency_rate.csv"
-
+class TelegramBot():
     __menu = types.ReplyKeyboardMarkup(resize_keyboard=True).row('/cryptography', '/languages', '/help')
     __back = types.ReplyKeyboardMarkup(resize_keyboard=True).row('Return to menu')
 
@@ -25,7 +21,7 @@ class Telegram_Bot():
         Note:   Ожидается, что после этой функции пользователь сам вызовет return
         """
 
-        self.bot.send_message(message.chat.id, "👌", reply_markup=self.__menu)
+        self.__bot.send_message(message.chat.id, "👌", reply_markup=self.__menu)
 
 
     def __delete_stuff_messages(self, previous_message, n):
@@ -37,8 +33,14 @@ class Telegram_Bot():
         #     self.bot.delete_message(previous_message.chat.id, previous_message.message_id - n + i)
 
 
-    def __init__(self):
-        @self.bot.message_handler(commands=['start'])
+    def __init__(self, token, lang_address, rate_address):
+        self.__bot = telebot.TeleBot(token)
+
+        self.__lang_path = lang_address
+        self.__rate_path = rate_address
+
+
+        @self.__bot.message_handler(commands=['start'])
         def __process_start_command(message):
 
             hello_message = """Hello, I'm bot cryptographer!
@@ -58,11 +60,11 @@ class Telegram_Bot():
                 columns=['language', 'alphabet']
             ).to_csv("Telegram Bot/languages.csv", index=False)
 
-            self.bot.send_message(message.chat.id, hello_message)
-            self.bot.send_sticker(message.chat.id, 'CAACAgIAAxkBAAEICEtkBkHXD4V609-dZVHPTyeflb_tzQACBQADwDZPE_lqX5qCa011LgQ', reply_markup=self.__menu)
+            self.__bot.send_message(message.chat.id, hello_message)
+            self.__bot.send_sticker(message.chat.id, 'CAACAgIAAxkBAAEICEtkBkHXD4V609-dZVHPTyeflb_tzQACBQADwDZPE_lqX5qCa011LgQ', reply_markup=self.__menu)
 
 
-        @self.bot.message_handler(commands=['cryptography'])
+        @self.__bot.message_handler(commands=['cryptography'])
         def __process_chipher_command(message):
             """
             Отлавливает комманду /cryptography
@@ -81,27 +83,27 @@ class Telegram_Bot():
                     
             """
 
-            languages = pd.read_csv(self.__lang_address)
+            languages = pd.read_csv(self.__lang_path)
 
             if len(languages.index) == 0:
-                s = self.bot.send_message(message.chat.id, "Oops, I don't know any langauge 😳\nIf you want to continue, you need to add at least one.\n\nProcess of adding your first language was ran automatically.\n\n(1/2) Set the name for the language", reply_markup=self.__back)
-                self.bot.register_next_step_handler(s, self.__get_lang_name, 'Add')
+                s = self.__bot.send_message(message.chat.id, "Oops, I don't know any langauge 😳\nIf you want to continue, you need to add at least one.\n\n⚙ Process of adding your first language was run automatically ⚙\n\n(1/2) Set the name for the language", reply_markup=self.__back)
+                self.__bot.register_next_step_handler(s, self.__get_lang_name, 'Add')
 
             else:
                 keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True).row('Caesar', 'Visener', 'Vernam', 'Return to menu')
 
-                languages = pd.read_csv(self.__lang_address)
+                languages = pd.read_csv(self.__lang_path)
 
                 if len(languages.index) == 1:
                     info_message = f"Only 1 language is available- {languages['language'].values[0]}"
                 else:
                     info_message = f"{len(languages.index)} languages are available: " + ", ".join(languages['language'].values)
 
-                s = self.bot.send_message(message.chat.id, f"I know 3 ciphers: Caesar, Visener and Vernam\n{info_message}\n\n(1/5) Choose a cipher:", reply_markup=keyboard)
-                self.bot.register_next_step_handler(s, self.__get_cipher)
+                s = self.__bot.send_message(message.chat.id, f"I know 3 ciphers: Caesar, Visener and Vernam\n{info_message}\n\n(1/5) Choose a cipher:", reply_markup=keyboard)
+                self.__bot.register_next_step_handler(s, self.__get_cipher)
 
 
-        @self.bot.message_handler(commands=['languages'])
+        @self.__bot.message_handler(commands=['languages'])
         def __process_language_command(message):
             """
             Отлавливает комманду /languages
@@ -120,7 +122,7 @@ class Telegram_Bot():
 
             keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True).row('View', 'Add', 'Delete', 'Return to menu')
 
-            languages = pd.read_csv(self.__lang_address)
+            languages = pd.read_csv(self.__lang_path)
 
             if len(languages.index) == 0:
                 info_message = "I don't know any language. It'd be nice if you could share some with me 😊"
@@ -129,20 +131,28 @@ class Telegram_Bot():
             else:
                 info_message = f"I know {len(languages.index)} languages: " + ", ".join(languages['language'].values)
 
-            s = self.bot.send_message(message.chat.id, info_message, reply_markup=keyboard)
-            self.bot.register_next_step_handler(s, self.__process_language)
+            s = self.__bot.send_message(message.chat.id, info_message, reply_markup=keyboard)
+            self.__bot.register_next_step_handler(s, self.__process_language)
 
 
-        @self.bot.message_handler(commands=['help'])
+        @self.__bot.message_handler(commands=['help'])
         def __process_help_command(message):
 
-            help_message = """Hey! I'm here to help you
+            help_message = """Hey! I'm here to help you :)
 
                            /cryptography - encodes, decodes and hacks text for you
-                           /languages - shows languages the bot knows or allows to add new ones
+                           /languages - shows languages the bot knows and allows to add new ones
                            """.replace(' ' * 27, '')
 
-            self.bot.send_message(message.chat.id, help_message, reply_markup=self.__menu)
+            self.__bot.send_message(message.chat.id, help_message, reply_markup=self.__menu)
+
+
+    def run(self):
+            """
+            Запускает телеграм бота
+            """
+
+            self.__bot.polling()
 
 
     ### Cryptography ###
@@ -156,15 +166,15 @@ class Telegram_Bot():
         if message.text in ['Caesar', 'Visener', 'Vernam']:
             keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True).row('Encode', 'Decode', 'Hack', 'Return to menu')
 
-            s = self.bot.send_message(message.chat.id, "(2/5) Set mode:", reply_markup=keyboard)
-            self.bot.register_next_step_handler(s, self.__get_mode, message.text)
+            s = self.__bot.send_message(message.chat.id, "(2/5) Set mode:", reply_markup=keyboard)
+            self.__bot.register_next_step_handler(s, self.__get_mode, message.text)
 
         elif message.text == 'Return to menu':
             self.__return_to_menu(message)
 
         else:
-            s = self.bot.send_message(message.chat.id, "I don't know such cipher. Please, try again", reply_markup=self.__back)
-            self.bot.register_next_step_handler(s, self.__get_cipher)
+            s = self.__bot.send_message(message.chat.id, "I don't know such cipher. Please, try again", reply_markup=self.__back)
+            self.__bot.register_next_step_handler(s, self.__get_cipher)
 
 
     def __get_mode(self, message, cipher):
@@ -174,7 +184,7 @@ class Telegram_Bot():
         Note:   Неправильный ввод перезапускает функцию с тем же аргументом
         """
 
-        languages = pd.read_csv(self.__lang_address)
+        languages = pd.read_csv(self.__lang_path)
 
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
         for lang in languages['language'].values:
@@ -182,15 +192,15 @@ class Telegram_Bot():
         keyboard.add('Return to menu')
 
         if message.text in ['Encode', 'Decode', 'Hack']:
-            s = self.bot.send_message(message.chat.id, "(3/5) Set lang:", reply_markup=keyboard)
-            self.bot.register_next_step_handler(s, self.__get_lang, cipher, message.text)
+            s = self.__bot.send_message(message.chat.id, "(3/5) Set lang:", reply_markup=keyboard)
+            self.__bot.register_next_step_handler(s, self.__get_lang, cipher, message.text)
 
         elif message.text == 'Return to menu':
             self.__return_to_menu(message)
 
         else:
-            s = self.bot.send_message(message.chat.id, "Wrong input. Please, try again", reply_markup=self.__back)
-            self.bot.register_next_step_handler(s, self.__get_mode, cipher)
+            s = self.__bot.send_message(message.chat.id, "Wrong input. Please, try again", reply_markup=self.__back)
+            self.__bot.register_next_step_handler(s, self.__get_mode, cipher)
 
 
     def __get_lang(self, message, cipher, mode):
@@ -204,13 +214,13 @@ class Telegram_Bot():
 
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True).row('View', 'Return to menu')
 
-        languages = pd.read_csv(self.__lang_address)
+        languages = pd.read_csv(self.__lang_path)
 
         if message.text == 'View':
-            msg = "· " + "\n· ".join([x[0] + " -> " + ' '.join([x[1][i].upper() + x[1][i] for i in range(len(x[1]) // 2)]) for x in pd.read_csv(self.__lang_address).values])
+            msg = "· " + "\n· ".join([x[0] + " -> " + ' '.join([x[1][i].upper() + x[1][i] for i in range(len(x[1]) // 2)]) for x in pd.read_csv(self.__lang_path).values])
 
-            s = self.bot.send_message(message.chat.id, msg, reply_markup=keyboard)
-            self.bot.register_next_step_handler(s, self.__get_lang, cipher, mode)
+            s = self.__bot.send_message(message.chat.id, msg, reply_markup=keyboard)
+            self.__bot.register_next_step_handler(s, self.__get_lang, cipher, mode)
             return
 
         if message.text == 'Return to menu':
@@ -219,16 +229,16 @@ class Telegram_Bot():
 
         if len(languages[languages['language'].isin([message.text])].values) == 1:
             if mode == 'Hack':
-                s = self.bot.send_message(message.chat.id, "(4-5/5) Set text:", reply_markup=types.ReplyKeyboardRemove())
-                self.bot.register_next_step_handler(s, self.__get_text, cipher, mode, message.text)
+                s = self.__bot.send_message(message.chat.id, "(4-5/5) Set text:", reply_markup=types.ReplyKeyboardRemove())
+                self.__bot.register_next_step_handler(s, self.__get_text, cipher, mode, message.text)
 
             else:
-                s = self.bot.send_message(message.chat.id, "(4/5) Set arg:", reply_markup=(types.ReplyKeyboardMarkup(resize_keyboard=True).row('Return to menu') if cipher == 'Caesar' else types.ReplyKeyboardRemove()))
-                self.bot.register_next_step_handler(s, self.__get_arg, cipher, mode, message.text)
+                s = self.__bot.send_message(message.chat.id, "(4/5) Set arg:", reply_markup=(types.ReplyKeyboardMarkup(resize_keyboard=True).row('Return to menu') if cipher == 'Caesar' else types.ReplyKeyboardRemove()))
+                self.__bot.register_next_step_handler(s, self.__get_arg, cipher, mode, message.text)
 
         else:
-            s = self.bot.send_message(message.chat.id, "I don't know such language. Please, try again", reply_markup=keyboard)
-            self.bot.register_next_step_handler(s, self.__get_lang, cipher, mode)
+            s = self.__bot.send_message(message.chat.id, "I don't know such language. Please, try again", reply_markup=keyboard)
+            self.__bot.register_next_step_handler(s, self.__get_lang, cipher, mode)
 
 
     def __get_arg(self, message, cipher, mode, lang):
@@ -245,12 +255,12 @@ class Telegram_Bot():
             return
 
         if cipher == 'Caesar' and not message.text.isdigit():
-            s = self.bot.send_message(message.chat.id, "Wrong input: number was expected, some cringe was found. Please, try again", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True).add('Return to menu'))
-            self.bot.register_next_step_handler(s, self.__get_arg, cipher, mode, lang)
+            s = self.__bot.send_message(message.chat.id, "Wrong input: number was expected, some cringe was found. Please, try again", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True).add('Return to menu'))
+            self.__bot.register_next_step_handler(s, self.__get_arg, cipher, mode, lang)
 
         else:
-            s = self.bot.send_message(message.chat.id, "(5/5) Set text:", reply_markup=types.ReplyKeyboardRemove())
-            self.bot.register_next_step_handler(s, self.__get_text, cipher, mode, lang, message.text)
+            s = self.__bot.send_message(message.chat.id, "(5/5) Set text:", reply_markup=types.ReplyKeyboardRemove())
+            self.__bot.register_next_step_handler(s, self.__get_text, cipher, mode, lang, message.text)
 
 
     def __get_text(self, message, cipher, mode, lang, arg = None):
@@ -261,15 +271,15 @@ class Telegram_Bot():
                 Если текст (для Цезаря) содержит буквы, отсутствующие в указанном алфавите, функция перезапускается с теми же аргументами
         """
 
-        languages = pd.read_csv(self.__lang_address)
+        languages = pd.read_csv(self.__lang_path)
 
         if cipher == 'Caesar':
-            if not utils.DoesBelongAlphabet(message.text, languages[languages['language'].isin([lang])]['alphabet'].values[0]):
-                s = self.bot.send_message(message.chat.id, "Wrong input: this text doen't belong to the alphabet. Please, try again", reply_markup=self.__back)
-                self.bot.register_next_step_handler(s, self.__get_text, cipher, mode, lang, arg)
+            if not utils_api.DoesBelongAlphabet(message.text, languages[languages['language'].isin([lang])]['alphabet'].values[0]):
+                s = self.__bot.send_message(message.chat.id, "Wrong input: this text doen't belong to the alphabet. Please, try again", reply_markup=self.__back)
+                self.__bot.register_next_step_handler(s, self.__get_text, cipher, mode, lang, arg)
                 return
 
-            processed_message = cg.Caesar(message.text, languages[languages['language'].isin([lang])]['alphabet'].values[0])
+            processed_message = ca_c.Caesar(message.text, languages[languages['language'].isin([lang])]['alphabet'].values[0])
 
             if mode == 'Encode':
                 processed_message.encode(int(arg))
@@ -277,12 +287,12 @@ class Telegram_Bot():
                 processed_message.decode(int(arg))
             if mode == 'Hack':
                 step = processed_message.hack()
-                self.bot.send_message(message.chat.id, f"Found step is {step}. Hacked message:")
+                self.__bot.send_message(message.chat.id, f"Found step is {step}. Hacked message:")
 
-            self.bot.send_message(message.chat.id, processed_message, reply_markup=self.__menu)
+            self.__bot.send_message(message.chat.id, processed_message, reply_markup=self.__menu)
 
         if cipher == 'Visener':
-            processed_message = cg.Visener(message.text, languages[languages['language'].isin([lang])]['alphabet'].values[0])
+            processed_message = vi_c.Visener(message.text, languages[languages['language'].isin([lang])]['alphabet'].values[0])
 
             if mode == 'Encode':
                 processed_message.encode(arg)
@@ -291,15 +301,15 @@ class Telegram_Bot():
             if mode == 'Hack':
                 processed_message.hack()
 
-            self.bot.send_message(message.chat.id, processed_message, reply_markup=self.__menu)
+            self.__bot.send_message(message.chat.id, processed_message, reply_markup=self.__menu)
 
         if cipher == 'Vernam':
-            if not utils.IsCorrectEncodedVernam(message.text):
-                s = self.bot.send_message(message.chat.id, "Wrong input: numbers and whitespaces were expected, some cringe was found. Please, try again", reply_markup=self.__back)
-                self.bot.register_next_step_handler(s, self.__get_text, cipher, mode, lang, arg)
+            if not utils_api.IsCorrectEncodedVernam(message.text):
+                s = self.__bot.send_message(message.chat.id, "Wrong input: numbers and whitespaces were expected, some cringe was found. Please, try again", reply_markup=self.__back)
+                self.__bot.register_next_step_handler(s, self.__get_text, cipher, mode, lang, arg)
                 return
 
-            processed_message = cg.Vernam(message.text, languages[languages['language'].isin([lang])]['alphabet'].values[0])
+            processed_message = ve_c.Vernam(message.text, languages[languages['language'].isin([lang])]['alphabet'].values[0])
 
             if mode == 'Encode':
                 processed_message.encode(arg)
@@ -308,7 +318,7 @@ class Telegram_Bot():
             if mode == 'Hack':
                 processed_message.hack()
 
-            self.bot.send_message(message.chat.id, processed_message, reply_markup=self.__menu)
+            self.__bot.send_message(message.chat.id, processed_message, reply_markup=self.__menu)
 
 
     ### Language ###
@@ -330,25 +340,30 @@ class Telegram_Bot():
             return
 
         if message.text == 'View':
-            msg = "· " + "\n· ".join([x[0] + " -> " + ' '.join([x[1][i].upper() + x[1][i] for i in range(len(x[1]) // 2)]) for x in pd.read_csv(self.__lang_address).values])
+            msg = "· " + "\n· ".join([x[0] + " -> " + ' '.join([x[1][i].upper() + x[1][i] for i in range(len(x[1]) // 2)]) for x in pd.read_csv(self.__lang_path).values])
 
-            self.bot.send_message(message.chat.id, msg, reply_markup=self.__menu)
+            self.__bot.send_message(message.chat.id, msg, reply_markup=self.__menu)
 
         elif message.text == 'Add':
-            s = self.bot.send_message(message.chat.id, "(1/2) Set the name for the language", reply_markup=self.__back)
-            self.bot.register_next_step_handler(s, self.__get_lang_name, 'Add')
+            s = self.__bot.send_message(message.chat.id, "(1/2) Set the name for the language", reply_markup=self.__back)
+            self.__bot.register_next_step_handler(s, self.__get_lang_name, 'Add')
 
         elif message.text == 'Delete':
-            keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True).row('View', 'Return to menu')
+            languages = pd.read_csv(self.__lang_path)
 
-            s = self.bot.send_message(message.chat.id, "Put the name of the language to delete", reply_markup=keyboard)
-            self.bot.register_next_step_handler(s, self.__get_lang_name, 'Delete')
+            keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+            for lang in languages['language'].values:
+                keyboard.add(lang)
+            keyboard.add('Return to menu')
+
+            s = self.__bot.send_message(message.chat.id, "Put the name of the language to delete", reply_markup=keyboard)
+            self.__bot.register_next_step_handler(s, self.__get_lang_name, 'Delete')
 
         else:
             keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True).row('View', 'Add', 'Delete', 'Return to menu')
 
-            s = self.bot.send_message(message.chat.id, "Wrong input. Please, try again", reply_markup=keyboard)
-            self.bot.register_next_step_handler(s, self.__process_language)
+            s = self.__bot.send_message(message.chat.id, "Wrong input. Please, try again", reply_markup=keyboard)
+            self.__bot.register_next_step_handler(s, self.__process_language)
 
 
     def __get_lang_name(self, message, mode):
@@ -366,7 +381,7 @@ class Telegram_Bot():
                 Неправильный ввод перезапускает функцию с тем же аргументом
         """
 
-        languages = pd.read_csv(self.__lang_address)
+        languages = pd.read_csv(self.__lang_path)
 
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True).row('View', 'Return to menu')
 
@@ -383,8 +398,8 @@ class Telegram_Bot():
             if mode == 'Delete':
                 msg = "Put the name of the language to delete"
 
-            s = self.bot.send_message(message.chat.id, info_message + '\n' + msg, reply_markup=self.__back)
-            self.bot.register_next_step_handler(s, self.__get_lang_name, mode)
+            s = self.__bot.send_message(message.chat.id, info_message + '\n' + msg, reply_markup=self.__back)
+            self.__bot.register_next_step_handler(s, self.__get_lang_name, mode)
             return
 
         if message.text == 'Return to menu':
@@ -393,21 +408,21 @@ class Telegram_Bot():
 
         if mode == 'Add':
             if len(languages[languages['language'].isin([message.text])].values) == 0:
-                s = self.bot.send_message(message.chat.id, f"(2/2) (no blanks) Set the alphabet for \'{message.text}\'", reply_markup=self.__back)
-                self.bot.register_next_step_handler(s, self.__get_lang_alphabet, message.text)
+                s = self.__bot.send_message(message.chat.id, f"(2/2) (no blanks) Set the alphabet for \'{message.text}\'", reply_markup=self.__back)
+                self.__bot.register_next_step_handler(s, self.__get_lang_alphabet, message.text)
 
             else:
-                s = self.bot.send_message(message.chat.id, "I already know such language. Please, try again", reply_markup=keyboard)
-                self.bot.register_next_step_handler(s, self.__get_lang_name, mode)
+                s = self.__bot.send_message(message.chat.id, "I already know such language. Please, try again", reply_markup=keyboard)
+                self.__bot.register_next_step_handler(s, self.__get_lang_name, mode)
 
         if mode == 'Delete':
             if len(languages[languages['language'].isin([message.text])].values) == 1:
-                languages[languages['language'].values != message.text].to_csv(self.__lang_address, index=False)
-                self.bot.send_message(message.chat.id, f"Language \'{message.text}\' was deleted", reply_markup=self.__menu)
+                languages[languages['language'].values != message.text].to_csv(self.__lang_path, index=False)
+                self.__bot.send_message(message.chat.id, f"Language \'{message.text}\' was deleted", reply_markup=self.__menu)
 
             else:
-                s = self.bot.send_message(message.chat.id, "I don't know such language. Please, try again", reply_markup=keyboard)
-                self.bot.register_next_step_handler(s, self.__get_lang_name, mode)
+                s = self.__bot.send_message(message.chat.id, "I don't know such language. Please, try again", reply_markup=keyboard)
+                self.__bot.register_next_step_handler(s, self.__get_lang_name, mode)
 
 
     def __get_lang_alphabet(self, message, lang):
@@ -425,19 +440,16 @@ class Telegram_Bot():
             self.__return_to_menu(message)
             return
 
-        if not utils.IsAlphabet(message.text):
-            s = self.bot.send_message(message.chat.id, "Wrong input. Please, try again", reply_markup=self.__back)
-            self.bot.register_next_step_handler(s, self.__get_lang_alphabet, lang)
+        if not utils_api.IsAlphabet(message.text):
+            s = self.__bot.send_message(message.chat.id, "Wrong input. Please, try again", reply_markup=self.__back)
+            self.__bot.register_next_step_handler(s, self.__get_lang_alphabet, lang)
         
         else:
-            pd.concat([pd.read_csv(self.__lang_address), pd.DataFrame({'language': [lang], 'alphabet': [utils.NormalizeAlphabet(message.text)]})]).to_csv(self.__lang_address, index=False)
+            pd.concat([pd.read_csv(self.__lang_path), pd.DataFrame({'language': [lang], 'alphabet': [utils_api.NormalizeAlphabet(message.text)]})]).to_csv(self.__lang_path, index=False)
 
-            self.bot.send_message(message.chat.id, f"Language \'{lang}\' was added", reply_markup=self.__menu)
+            self.__bot.send_message(message.chat.id, f"Language \'{lang}\' was added", reply_markup=self.__menu)
 
 
     def __get_lang_frq_rate(self, message, lang):
         """ [TBD] """
         pass
-
-
-Telegram_Bot().bot.polling()
