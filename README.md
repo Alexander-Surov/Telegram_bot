@@ -1,5 +1,5 @@
 Запуск:  
-- Cоздаём такую организацию папок:  
+- Cоздаём такую организацию папок: 
   ╍┓ Telegram Bot  
    ┣╍┓ Api  
    ┃ ┣➜ telegram_bot_cryptographer  
