@@ -2,7 +2,7 @@ from api import telegram_bot as tg_bot
 from pathlib import Path
 
 
-token = Path("Telegram Bot/Token.txt").read_text()
+token = Path("Telegram Bot/token.txt").read_text()
 
 language_path = "Telegram Bot/languages.csv"
 rate_path = None
