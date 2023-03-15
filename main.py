@@ -1,4 +1,4 @@
-from api import telegram_bot_cryptographer as tg_bot
+from api import telegram_bot as tg_bot
 from pathlib import Path
 
 
